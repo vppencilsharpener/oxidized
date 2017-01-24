@@ -713,13 +713,15 @@ model_map:
 
 ### Advanced Group Configuration
 
-For group specific credentials
+For group specific credentials and vars
 
 ```
 groups:
   mikrotik:
     username: admin
     password: blank
+    vars:
+       enable: blank
   ubiquiti:
     username: ubnt
     password: ubnt
