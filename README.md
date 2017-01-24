@@ -845,13 +845,21 @@ hooks:
     region: us-east-1
     topic_arn: arn:aws:sns:us-east-1:1234567:oxidized-test-backup_events
 ```
-
+AWS SNS hook requires the AWS SDK for Ruby
+```shell
+gem install aws-sdk
+```
 AWS SNS hook requires the following configuration keys:
 
   * `region`: AWS Region name
   * `topic_arn`: ASN Topic reference
 
-Your AWS credentials should be stored in `~/.aws/credentials`.
+Your AWS credentials should be stored in `~/.aws/credentials`:
+```
+[default]
+aws_access_key_id = NOTAREALAWSID2BAT8RD
+aws_secret_access_key = Hvksome5fakekey8sd8Iasdfe093zfElKczfa3fh
+```
 
 # Ruby API
 
