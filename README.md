@@ -885,6 +885,7 @@ The following objects exist in Oxidized.
  * cmd is executed in instance of model
  * 'junos', 'ios', 'ironware' and 'powerconnect' implemented
 
+Custom models can be installed to ~/.config/oxidized/model/
 
 # License and Copyright
 
