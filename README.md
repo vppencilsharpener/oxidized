@@ -111,7 +111,7 @@ gem install oxidized-script oxidized-web
 git clone https://github.com/ytti/oxidized.git
 cd oxidized/
 gem build *.gemspec
-gem install pkg/*.gem
+gem install *.gem
 ```
 
 ### Running with Docker
