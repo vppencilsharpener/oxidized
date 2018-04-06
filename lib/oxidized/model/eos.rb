@@ -11,10 +11,10 @@ class EOS < Oxidized::Model
   end
 
   cmd :secret do |cfg|
-     cfg.gsub! /^(snmp-server community).*/, '\\1 <configuration removed>'
-     cfg.gsub! /username (\S+) privilege (\d+) (\S+).*/, '<secret hidden>'
-     cfg.gsub! /^(enable secret).*/, '\\1 <configuration removed>'
-     cfg.gsub! /^(tacacs-server key \d+).*/, '\\1 <configuration removed>'
+     cfg.gsub! /^(snmp-server community).*/, '\\1 <community removed>'
+     cfg.gsub! /^(username (\S+) (?:privilege \d+ )?(?:role \S+) secret) .+/, '\\1 <secret removed>'
+     cfg.gsub! /^(enable secret).*/, '\\1 <secret removed>'
+     cfg.gsub! /^(tacacs-server key \d+).*/, '\\1 <key removed>'
      cfg
   end
 
