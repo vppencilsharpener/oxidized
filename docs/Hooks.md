@@ -85,7 +85,7 @@ hooks:
       firewalls: git@git.intranet:oxidized/firewalls.git
 ```
 
-## githubrepo hook configuration example
+## githubrepo hook configuration examples
 
 ```yaml
 hooks:
@@ -95,6 +95,23 @@ hooks:
     remote_repo: git@git.intranet:oxidized/test.git
     username: user
     password: pass
+```
+
+```yaml
+output:
+  git:
+    user: Oxidized
+    email: oxidized@oxdized.intranet
+    single_repo: true
+    repo: "/home/oxidized/.config/oxidized/configs.git"
+
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: ssh://git@git.intranet:oxidized
+    publickey: "/home/oxidized/.ssh/id_rsa.pub"
+    privatekey: "/home/oxidized/.ssh/id_rsa"
 ```
 
 ## Hook type: awssns
