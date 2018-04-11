@@ -31,13 +31,15 @@ class Procurve < Oxidized::Model
     cfg = cfg.gsub /^\r/, ''
   end
 
-  cmd :secret do |cfg|
-    cfg.gsub! /^(snmp-server community).*/, '\\1 <configuration removed>'
-    cfg.gsub! /^(snmp-server host).*/, '\\1 <configuration removed>'
-    cfg.gsub! /^(radius-server host).*/, '\\1 <configuration removed>'
-    cfg.gsub! /^(radius-server key).*/, '\\1 <configuration removed>'
+   cmd :secret do |cfg|
+    cfg.gsub! /^(snmp-server.* community ").+(".*)/, '\\1<community removed>\\2'
+#    cfg.gsub! /^(snmp-server host).*/, '\\1 <configuration removed>'
+#    cfg.gsub! /^(radius-server host).*/, '\\1 <configuration removed>'
+    cfg.gsub! /^(.+ key ).+/, '\\1<key removed>'
+    cfg.gsub! /^(.+ sha1 ).+/, '\\1<hash removed>'
     cfg
   end
+
 
   cmd 'show version' do |cfg|
     comment cfg
@@ -48,6 +50,9 @@ class Procurve < Oxidized::Model
   end
 
   cmd 'show system power-supply' do |cfg|
+    #1       1     J9737A    Unknown     Powered          AC 120V/240V       41      1050
+    #power is causing flapping. 
+    #cfg.gsub! /^(\d\s\d\s\w\s\w\s\w\s(?:(?:A|D)C .+V)\s))(\d)(\s\d)/, '\\1##\\3'
     comment cfg
   end
 
