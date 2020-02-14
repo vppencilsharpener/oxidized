@@ -1,8 +1,8 @@
 class Netonix < Oxidized::Model
-  prompt /^[\w\s.@_\/:-]+#/
+  prompt /^[\w\s\(\).@_\/:-]+#/
 
   cmd :all do |cfg|
-    cfg.each_line.to_a[1..-2].join
+    cfg.cut_both
   end
 
   cmd 'cat config.json;echo'

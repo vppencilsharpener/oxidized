@@ -7,14 +7,13 @@ describe Oxidized::Node do
 
     Oxidized::Node.any_instance.stubs(:resolve_repo)
     Oxidized::Node.any_instance.stubs(:resolve_output)
-    @node = Oxidized::Node.new(name: 'example.com',
-                               input: 'ssh',
-                               output: 'git',
-                               model: 'junos',
+    @node = Oxidized::Node.new(name:     'example.com',
+                               input:    'ssh',
+                               output:   'git',
+                               model:    'junos',
                                username: 'alma',
                                password: 'armud',
-                               prompt: 'test_prompt')
-
+                               prompt:   'test_prompt')
   end
 
   describe '#new' do
@@ -39,8 +38,30 @@ describe Oxidized::Node do
     it 'should fetch the configuration' do
       stub_oxidized_ssh
 
-      status, _ = @node.run
+      status, = @node.run
       status.must_equal :success
+    end
+    it 'should record the success' do
+      stub_oxidized_ssh
+
+      before_successes = @node.stats.successes
+      j = Oxidized::Job.new @node
+      j.join
+      @node.stats.add j
+      after_successes = @node.stats.successes
+      successes = after_successes - before_successes
+      successes.must_equal 1
+    end
+    it 'should record a failure' do
+      stub_oxidized_ssh_fail
+
+      before_fails = @node.stats.failures
+      j = Oxidized::Job.new @node
+      j.join
+      @node.stats.add j
+      after_fails = @node.stats.failures
+      fails = after_fails - before_fails
+      fails.must_equal 1
     end
   end
 
@@ -52,9 +73,9 @@ describe Oxidized::Node do
 
     let(:group) { nil }
     let(:node) do
-      Oxidized::Node.new({
+      Oxidized::Node.new(
         ip: '127.0.0.1', group: group, model: 'junos'
-      })
+      )
     end
 
     it 'when there are no groups' do

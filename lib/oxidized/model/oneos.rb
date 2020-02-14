@@ -1,25 +1,24 @@
 class OneOS < Oxidized::Model
-
   prompt /^([\w.@()-]+#\s?)$/
   comment  '! '
 
   # example how to handle pager
-  #expect /^\s--More--\s+.*$/ do |data, re|
+  # expect /^\s--More--\s+.*$/ do |data, re|
   #  send ' '
   #  data.sub re, ''
-  #end
+  # end
 
   # non-preferred way to handle additional PW prompt
-  #expect /^[\w.]+>$/ do |data|
+  # expect /^[\w.]+>$/ do |data|
   #  send "enable\n"
   #  send vars(:enable) + "\n"
   #  data
-  #end
+  # end
 
   cmd :all do |cfg|
-    #cfg.gsub! /\cH+\s{8}/, ''         # example how to handle pager
-    #cfg.gsub! /\cH+/, ''              # example how to handle pager
-    cfg.each_line.to_a[1..-2].join
+    # cfg.gsub! /\cH+\s{8}/, ''         # example how to handle pager
+    # cfg.gsub! /\cH+/, ''              # example how to handle pager
+    cfg.cut_both
   end
 
   cmd :secret do |cfg|
@@ -28,6 +27,14 @@ class OneOS < Oxidized::Model
   end
 
   cmd 'show version' do |cfg|
+    comment cfg
+  end
+
+  cmd 'show system hardware' do |cfg|
+    comment cfg
+  end
+
+  cmd 'show product-info-area' do |cfg|
     comment cfg
   end
 
@@ -54,5 +61,4 @@ class OneOS < Oxidized::Model
     post_login 'term len 0'
     pre_logout 'exit'
   end
-
 end

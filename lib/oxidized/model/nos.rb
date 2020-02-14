@@ -1,16 +1,15 @@
 class NOS < Oxidized::Model
-
   # Brocade Network Operating System
 
   prompt /^(?:\e\[..h)?[\w.-]+# $/
   comment  '! '
 
   cmd :all do |cfg|
-    cfg.each_line.to_a[1..-2].join
+    cfg.cut_both
   end
 
   cmd 'show version' do |cfg|
-    comment cfg
+    comment cfg.each_line.reject { |line| line.match /([Ss]ystem [Uu]p\s?[Tt]ime|[Uu]p\s?[Tt]ime is \d)/ }.join
   end
 
   cmd 'show inventory' do |cfg|
@@ -22,11 +21,11 @@ class NOS < Oxidized::Model
   end
 
   cmd 'show chassis' do |cfg|
-    comment cfg.each_line.reject { |line| line.match /Time/ or line.match /Update/ }.join
+    comment cfg.each_line.reject { |line| line.match(/Time/) || line.match(/Update/) }.join
   end
 
   cfg 'show system' do |cfg|
-    comment cfg.each_line.reject { |line| line.match /Time/ or line.match /speed/ }
+    comment(cfg.each_line.reject { |line| line.match(/Time/) || line.match(/speed/) })
   end
 
   cmd 'show running-config | nomore'
@@ -38,8 +37,7 @@ class NOS < Oxidized::Model
 
   cfg :telnet, :ssh do
     post_login 'terminal length 0'
-    #post_login 'terminal width 0'
+    # post_login 'terminal width 0'
     pre_logout 'exit'
   end
-
 end

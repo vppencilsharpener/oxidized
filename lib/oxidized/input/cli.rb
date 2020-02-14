@@ -32,26 +32,36 @@ module Oxidized
         @pre_logout.each { |command, block| block ? block.call : (cmd command, nil) }
       end
 
-      def post_login _post_login=nil, &block
-        unless @exec
-          @post_login << [_post_login, block]
+      def post_login(cmd = nil, &block)
+        return if @exec
+
+        @post_login << [cmd, block]
+      end
+
+      def pre_logout(cmd = nil, &block)
+        return if @exec
+
+        @pre_logout << [cmd, block]
+      end
+
+      def username(regex = /^(Username|login)/)
+        @username || (@username = regex)
+      end
+
+      def password(regex = /^Password/)
+        @password || (@password = regex)
+      end
+
+      def login
+        match_re = [@node.prompt]
+        match_re << @username if @username
+        match_re << @password if @password
+        until (match = expect(match_re)) == @node.prompt
+          cmd(@node.auth[:username], nil) if match == @username
+          cmd(@node.auth[:password], nil) if match == @password
+          match_re.delete match
         end
       end
-
-      def pre_logout _pre_logout=nil, &block
-        unless @exec
-          @pre_logout <<  [_pre_logout, block]
-        end
-      end
-
-      def username re=/^(Username|login)/
-        @username or @username = re
-      end
-
-      def password re=/^Password/
-        @password or @password = re
-      end
-
     end
   end
 end

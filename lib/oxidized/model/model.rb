@@ -6,43 +6,62 @@ module Oxidized
     include Oxidized::Config::Vars
 
     class << self
-      def inherited klass
-        klass.instance_variable_set '@cmd',   Hash.new { |h,k| h[k] = [] }
-        klass.instance_variable_set '@cfg',   Hash.new { |h,k| h[k] = [] }
-        klass.instance_variable_set '@procs', Hash.new { |h,k| h[k] = [] }
-        klass.instance_variable_set '@expect', []
-        klass.instance_variable_set '@comment', nil
-        klass.instance_variable_set '@prompt', nil
-      end
-      def comment _comment='# '
-        return @comment if @comment
-        @comment = block_given? ? yield : _comment
-      end
-      def prompt _prompt=nil
-        @prompt or @prompt = _prompt
-      end
-      def cfg *methods, &block
-        [methods].flatten.each do |method|
-          @cfg[method.to_s] << block
+      def inherited(klass)
+        if klass.superclass == Oxidized::Model
+          klass.instance_variable_set '@cmd',     (Hash.new { |h, k| h[k] = [] })
+          klass.instance_variable_set '@cfg',     (Hash.new { |h, k| h[k] = [] })
+          klass.instance_variable_set '@procs',   (Hash.new { |h, k| h[k] = [] })
+          klass.instance_variable_set '@expect',  []
+          klass.instance_variable_set '@comment', nil
+          klass.instance_variable_set '@prompt',  nil
+        else # we're subclassing some existing model, take its variables
+          instance_variables.each do |var|
+            klass.instance_variable_set var, instance_variable_get(var)
+          end
         end
       end
+
+      def comment(str = "# ")
+        @comment = if block_given?
+                     yield
+                   elsif not @comment
+                     str
+                   else
+                     @comment
+                   end
+      end
+
+      def prompt(regex = nil)
+        @prompt = regex || @prompt
+      end
+
+      def cfg(*methods, **args, &block)
+        [methods].flatten.each do |method|
+          process_args_block(@cfg[method.to_s], args, block)
+        end
+      end
+
       def cfgs
         @cfg
       end
-      def cmd _cmd=nil, &block
-        if _cmd.class == Symbol
-          @cmd[_cmd] << block
+
+      def cmd(cmd_arg = nil, **args, &block)
+        if cmd_arg.class == Symbol
+          process_args_block(@cmd[cmd_arg], args, block)
         else
-          @cmd[:cmd] << [_cmd, block]
+          process_args_block(@cmd[:cmd], args, [cmd_arg, block])
         end
-        Oxidized.logger.debug "lib/oxidized/model/model.rb Added #{_cmd} to the commands list"
+        Oxidized.logger.debug "lib/oxidized/model/model.rb Added #{cmd_arg} to the commands list"
       end
+
       def cmds
         @cmd
       end
-      def expect re, &block
-        @expect << [re, block]
+
+      def expect(regex, **args, &block)
+        process_args_block(@expect, args, [regex, block])
       end
+
       def expects
         @expect
       end
@@ -54,8 +73,8 @@ module Oxidized
       # @since 0.0.39
       # @yield expects block which should return [String]
       # @return [void]
-      def pre &block
-        @procs[:pre] << block
+      def pre(**args, &block)
+        process_args_block(@procs[:pre], args, block)
       end
 
       # calls the block at the end of the model, adding the output of the block
@@ -65,24 +84,35 @@ module Oxidized
       # @since 0.0.39
       # @yield expects block which should return [String]
       # @return [void]
-      def post &block
-        @procs[:post] << block
+      def post(**args, &block)
+        process_args_block(@procs[:post], args, block)
       end
 
       # @author Saku Ytti <saku@ytti.fi>
       # @since 0.0.39
       # @return [Hash] hash proc procs :pre+:post to be prepended/postfixed to output
-      def procs
-        @procs
+      attr_reader :procs
+
+      private
+
+      def process_args_block(target, args, block)
+        if args[:clear]
+          target.replace([block])
+        else
+          method = args[:prepend] ? :unshift : :push
+          target.send(method, block)
+        end
       end
     end
 
     attr_accessor :input, :node
 
-    def cmd string, &block
+    def cmd(string, &block)
       Oxidized.logger.debug "lib/oxidized/model/model.rb Executing #{string}"
       out = @input.cmd(string)
       return false unless out
+
+      out = out.b unless Oxidized.config.input.utf8_encoded?
       self.class.cmds[:all].each do |all_block|
         out = instance_exec Oxidized::String.new(out), string, &all_block
       end
@@ -99,12 +129,12 @@ module Oxidized
       @input.output
     end
 
-    def send data
+    def send(data)
       @input.send data
     end
 
-    def expect re, &block
-      self.class.expect re, &block
+    def expect(regex, &block)
+      self.class.expect regex, &block
     end
 
     def cfg
@@ -115,14 +145,10 @@ module Oxidized
       self.class.prompt
     end
 
-    def expects data
+    def expects(data)
       self.class.expects.each do |re, cb|
         if data.match re
-          if cb.arity == 2
-            data = instance_exec [data, re], &cb
-          else
-            data = instance_exec data, &cb
-          end
+          data = cb.arity == 2 ? instance_exec([data, re], &cb) : instance_exec(data, &cb)
         end
       end
       data
@@ -135,6 +161,7 @@ module Oxidized
       self.class.cmds[:cmd].each do |command, block|
         out = cmd command, &block
         return false unless out
+
         outputs << out
       end
       procs[:pre].each do |pre_proc|
@@ -146,9 +173,9 @@ module Oxidized
       outputs
     end
 
-    def comment _comment
+    def comment(str)
       data = ''
-      _comment.each_line do |line|
+      str.each_line do |line|
         data << self.class.comment << line
       end
       data
@@ -160,12 +187,11 @@ module Oxidized
 
     private
 
-    def process_cmd_output output, name
-      output = Oxidized::String.new output if ::String === output
-      output = Oxidized::String.new '' unless Oxidized::String === output
+    def process_cmd_output(output, name)
+      output = Oxidized::String.new(output) if output.is_a?(::String)
+      output = Oxidized::String.new('') unless output.instance_of?(Oxidized::String)
       output.set_cmd(name)
       output
     end
-
   end
 end

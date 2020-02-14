@@ -1,17 +1,19 @@
-class DNOS  < Oxidized::Model
-
+class DNOS < Oxidized::Model
   # Force10 DNOS model #
 
   comment  '! '
 
   cmd :all do |cfg|
     cfg.gsub! /^% Invalid input detected at '\^' marker\.$|^\s+\^$/, ''
+    cfg.gsub! /(uptime is)(\s.+)/, '\\1 <removed>' # Omit changing uptime info
     cfg.each_line.to_a[2..-2].join
   end
 
-  cmd :secret do |cfg| 
+  cmd :secret do |cfg|
     cfg.gsub! /^(snmp-server community).*/, '\\1 <configuration removed>'
     cfg.gsub! /secret (\d+) (\S+).*/, '<secret hidden>'
+    cfg.gsub! /password (\d+) (\S+).*/, '<secret hidden>'
+    cfg.gsub! /^(tacacs-server key \d+) (\S+).*/, '\\1 <secret hidden>'
     cfg
   end
 
@@ -24,10 +26,6 @@ class DNOS  < Oxidized::Model
   end
 
   cmd 'show version' do |cfg|
-    comment cfg
-  end
-
-  cmd 'show system' do |cfg|
     comment cfg
   end
 
@@ -51,7 +49,6 @@ class DNOS  < Oxidized::Model
     post_login 'terminal length 0'
     post_login 'terminal width 0'
     pre_logout 'exit'
-    pre_logout 'exit'    
+    pre_logout 'exit'
   end
-
 end

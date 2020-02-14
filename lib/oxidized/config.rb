@@ -4,22 +4,23 @@ module Oxidized
   class InvalidConfig < OxidizedError; end
   class Config
     Root      = ENV['OXIDIZED_HOME'] || File.join(ENV['HOME'], '.config', 'oxidized')
-    Crash     = File.join Root, 'crash'
-    Log       = File.join Root, 'logs'
-    InputDir  = File.join Directory, %w(lib oxidized input)
-    OutputDir = File.join Directory, %w(lib oxidized output)
-    ModelDir  = File.join Directory, %w(lib oxidized model)
-    SourceDir = File.join Directory, %w(lib oxidized source)
-    HookDir   = File.join Directory, %w(lib oxidized hook)
+    Crash     = File.join(ENV['OXIDIZED_LOGS'] || Root, 'crash')
+    Log       = File.join(ENV['OXIDIZED_LOGS'] || Root, 'logs')
+    InputDir  = File.join Directory, %w[lib oxidized input]
+    OutputDir = File.join Directory, %w[lib oxidized output]
+    ModelDir  = File.join Directory, %w[lib oxidized model]
+    SourceDir = File.join Directory, %w[lib oxidized source]
+    HookDir   = File.join Directory, %w[lib oxidized hook]
     Sleep     = 1
 
-    def self.load(cmd_opts={})
+    def self.load(cmd_opts = {})
       asetus = Asetus.new(name: 'oxidized', load: false, key_to_s: true)
       Oxidized.asetus = asetus
 
       asetus.default.username      = 'username'
       asetus.default.password      = 'password'
       asetus.default.model         = 'junos'
+      asetus.default.resolve_dns   = true # if false, don't resolve DNS to IP
       asetus.default.interval      = 3600
       asetus.default.use_syslog    = false
       asetus.default.debug         = false
@@ -34,22 +35,27 @@ module Oxidized
       asetus.default.models        = {}               # model level configuration
       asetus.default.pid           = File.join(Oxidized::Config::Root, 'pid')
 
-      asetus.default.input.default    = 'ssh, telnet'
-      asetus.default.input.debug      = false # or String for session log file
-      asetus.default.input.ssh.secure = false # complain about changed certs
-      asetus.default.input.ftp.passive= true  # ftp passive mode
+      asetus.default.crash.directory = File.join(Oxidized::Config::Root, 'crashes')
+      asetus.default.crash.hostnames = false
+
+      asetus.default.stats.history_size = 10
+      asetus.default.input.default      = 'ssh, telnet'
+      asetus.default.input.debug        = false # or String for session log file
+      asetus.default.input.ssh.secure   = false # complain about changed certs
+      asetus.default.input.ftp.passive  = true  # ftp passive mode
+      asetus.default.input.utf8_encoded = true  # configuration is utf8 encoded or ascii-8bit
 
       asetus.default.output.default = 'file'  # file, git
       asetus.default.source.default = 'csv'   # csv, sql
 
       asetus.default.model_map = {
-        'cisco'   => 'ios',
         'juniper' => 'junos',
+        'cisco'   => 'ios'
       }
 
       begin
         asetus.load # load system+user configs, merge to Config.cfg
-      rescue => error
+      rescue StandardError => error
         raise InvalidConfig, "Error loading config: #{error.message}"
       end
 
