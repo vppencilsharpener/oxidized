@@ -10,7 +10,7 @@ class EOS < Oxidized::Model
   end
 
   cmd :secret do |cfg|
-    cfg.gsub! /^(snmp-server community).*/, '\\1 <community  removed>'
+    cfg.gsub! /^(snmp-server community).*/, '\\1 <community removed>'
     cfg.gsub! /(secret \w+) (\S+).*/, '\\1 <secret hidden>'
     cfg.gsub! /(password \d+) (\S+).*/, '\\1 <secret hidden>'
     cfg.gsub! /^(enable secret).*/, '\\1 <configuration removed>'
